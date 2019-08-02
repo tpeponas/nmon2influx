@@ -1,4 +1,5 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python3
+
 
 # TPEP import AIX nmon file to influxdb
 
@@ -24,7 +25,7 @@ class NMON_Import:
         self.host=""
         self.serial=""
         self.debug=0
-        self.copydata=dict()
+        self.metric=dict()
         self.json_body=[];
         self.col_name=dict()
         self.zzzz=dict()
@@ -56,7 +57,7 @@ class NMON_Import:
     def proc_label_value(self,line):
         r=line.replace(',,',',0,')
         line_tab=r.strip().split(',')
-        if line_tab[0] in self.copydata:
+        if line_tab[0] in self.metric:
             line_tab[1]=self.zzzz[line_tab[1]]
             epoch=int(time.mktime(time.strptime(line_tab[1],"%d-%b-%YT%H:%M:%SZ")))
             for i in range(len(self.labels[line_tab[0]])):
@@ -73,7 +74,7 @@ class NMON_Import:
                     }
                 })
         else:
-            self.copydata[line_tab[0]]=True;
+            self.metric[line_tab[0]]=True;
             self.labels[line_tab[0]]=[];
             for i in iter(line_tab[2:]):
                 self.labels[line_tab[0]].append(i.strip())
@@ -82,7 +83,7 @@ class NMON_Import:
     def proc_hdisk(self,line):
         r=line.replace(',,',',0,')
         line_tab=r.strip().split(',')
-        if line_tab[0] in self.copydata:
+        if line_tab[0] in self.metric:
             line_tab[1]=self.zzzz[line_tab[1]]
             epoch=int(time.mktime(time.strptime(line_tab[1],"%d-%b-%YT%H:%M:%SZ")))
             for i in range(len(self.labels[line_tab[0]])):
@@ -105,7 +106,7 @@ class NMON_Import:
                     }
                 })
         else:
-            self.copydata[line_tab[0]]=True;
+            self.metric[line_tab[0]]=True;
             self.labels[line_tab[0]]=[];
             for i in iter(line_tab[2:]):
                 self.labels[line_tab[0]].append(i.strip())
@@ -119,7 +120,7 @@ class NMON_Import:
         cpu_id=re.search('^[PS]*CPU([0-9]+),.*',line).group(1).strip()
         cpu_type=re.search('(^[PS]*CPU)[0-9]+,.*',line).group(1).strip()
 
-        if cpu_type in self.copydata and (re.match("T[0-9]+",line_tab[1])):
+        if cpu_type in self.metric and (re.match("T[0-9]+",line_tab[1])):
             line_tab[1]=self.zzzz[line_tab[1]]
             epoch=int(time.mktime(time.strptime(line_tab[1],"%d-%b-%YT%H:%M:%SZ")))
             l=len(self.col_name[cpu_type])
@@ -136,7 +137,7 @@ class NMON_Import:
                 "fields" : fields
             })
         else:
-            self.copydata[cpu_type]=True;
+            self.metric[cpu_type]=True;
             self.col_name[cpu_type]=line_tab[2:]
                    
         
@@ -144,7 +145,7 @@ class NMON_Import:
         r=line.replace(',,',',0,')
         line_tab=r.strip().split(',')
         fields=dict()
-        if line_tab[0] in self.copydata:
+        if line_tab[0] in self.metric:
             line_tab[1]=self.zzzz[line_tab[1]]
             l=len(self.col_name[line_tab[0]])
             for i in range(l-1):
@@ -161,7 +162,7 @@ class NMON_Import:
                 "fields" : fields
             })
         else:
-            self.copydata[line_tab[0]]=True;
+            self.metric[line_tab[0]]=True;
             self.col_name[line_tab[0]]=line_tab[2:]
             
                         
@@ -169,7 +170,7 @@ class NMON_Import:
     def proc_top(self,line):
         line_tab=line.strip().split(',')
         fields=dict()
-        if line_tab[0] in self.copydata and re.match("[0-9]+",line_tab[1]):
+        if line_tab[0] in self.metric and re.match("[0-9]+",line_tab[1]):
             line_tab[2]=self.zzzz[line_tab[2]]
             epoch=int(time.mktime(time.strptime(line_tab[2],"%d-%b-%YT%H:%M:%SZ")))
             l=len(self.col_name[line_tab[0]])
@@ -188,7 +189,7 @@ class NMON_Import:
                 "fields" : fields
             })
         else:
-            self.copydata[line_tab[0]]=True
+            self.metric[line_tab[0]]=True
             self.col_name[line_tab[0]]=line_tab[3:]
             
 
@@ -199,7 +200,7 @@ class NMON_Import:
         fields=dict()
         line_tab[1]=self.zzzz[line_tab[1]]
 
-        if line_tab[0] in self.copydata:
+        if line_tab[0] in self.metric:
             l=len(self.col_name[line_tab[0]])
             for i in range(l-2):
                 fields[self.col_name[line_tab[0]][i]]=float(line_tab[i+2])
@@ -216,7 +217,7 @@ class NMON_Import:
                 "fields" : fields
             })
         else:
-            self.copydata[line_tab[0]]=True;
+            self.metric[line_tab[0]]=True;
             self.col_name[line_tab[0]]=line_tab[2:]
 
             
@@ -227,7 +228,7 @@ class NMON_Import:
         fields=dict()
         print ("UARG:" + line)
         
-        if line_tab[0] in self.copydata:
+        if line_tab[0] in self.metric:
             if (re.search("THCNT",line)):
                 pass
             else:
@@ -254,7 +255,7 @@ class NMON_Import:
                     "fields" : fields
                 })
         else:
-            self.copydata[line_tab[0]]=True;
+            self.metric[line_tab[0]]=True;
             self.col_name[line_tab[0]]=line_tab[2:]
 
     def proc_zzzz(self,line):
@@ -275,7 +276,7 @@ class NMON_Import:
         self.json_body=[];
         
     def parse_file(self,file):
-        self.copydata=dict()
+        self.metric=dict()
         self.zzzz=dict()
         self.labels=dict()
         self.hdiskinfo=dict()
@@ -320,6 +321,7 @@ parser.add_argument("--ssh_username",help="ssh username for remote connection",d
 parser.add_argument("--ssh_password",help="ssh password for remote connection",default=config.get('SSH','password',fallback=None));
 parser.add_argument("--ssh_keyfile",help="ssh key file for remote connection",default=config.get('SSH','keyfile',fallback=None));
 parser.add_argument("--ssh_file",help="ssh remote file");
+parser.add_argument("--proxy",help="ssh proxy conexion like bastion",default=config.get('SSH','proxy',fallback=None))
 parser.add_argument("-f",type=argparse.FileType('r'), nargs='+');
 args = parser.parse_args()
 
@@ -333,6 +335,10 @@ dbport=args.influx_port
 
 NMON=NMON_Import(skip=args.skip,only=args.only,influx_dbhost=dbhost,influx_dbname=dbname,influx_dbport=dbport);
 
+# Set proxy ssh config if avaible
+
+sock_proxy=None
+
 if (args.f is None and args.ssh_host):
     host_list=args.ssh_host.split(',')
     for host in iter(host_list):
@@ -340,27 +346,34 @@ if (args.f is None and args.ssh_host):
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         try:
+            print  ("Connect to "+host)
+            if (args.proxy):
+                sock_proxy=paramiko.ProxyCommand("ssh peponas@"+args.proxy+" nc "+host+" 22")
+                
             if (args.ssh_keyfile):
                 ssh.connect(host,username=args.ssh_username,key_filename=args.ssh_keyfile)
             else:
-                ssh.connect(host,username=args.ssh_username,password=args.ssh_password)
-
-                stdin, stdout, stderr = ssh.exec_command("ls "+args.ssh_file);
-                for f in iter(stdout):
-                    print("import "+host+" file:"+f.strip());
-                    ftp = ssh.open_sftp()
-                    ftp.get(f.strip(),'/tmp/tmp_nmon2pg')
-                    ftp.close()
-                    remote_file=open('/tmp/tmp_nmon2pg',encoding='latin1')
-                    NMON.parse_file(remote_file)
-                    remote_file.close()
-                ssh.close()
+                ssh.connect(host,username=args.ssh_username,password=args.ssh_password,sock=sock_proxy)
+            stdin, stdout, stderr = ssh.exec_command("ls "+args.ssh_file);
+            
+            #    stdout=ssh.get_cmd_output("ls "+args.ssh_file);
+            #print (stdout)
+            for f in iter(stdout):
+                print("import "+host+" file:'"+f.strip()+"'");
+                ftp = ssh.open_sftp()
+                ftp.get(f.strip(),'/tmp/tmp_nmon2pg')
+                ftp.close()
+                remote_file=open('/tmp/tmp_nmon2pg',encoding='latin1')
+                NMON.parse_file(remote_file)
+                remote_file.close()
+            ssh.close()
         except Exception as e:
             print (e)
             print ("Can not ssh connect to "+host);
             NMON.flush();
             pass
 else:
-    for nmon_file in args.f:
-        NMON.parse_file(nmon_file)
-        nmon_file.close();
+    if (args.f):
+        for nmon_file in args.f:
+            NMON.parse_file(nmon_file)
+            nmon_file.close();
