@@ -348,7 +348,7 @@ if (args.f is None and args.ssh_host):
         try:
             print  ("Connect to "+host)
             if (args.proxy):
-                sock_proxy=paramiko.ProxyCommand("ssh peponas@"+args.proxy+" nc "+host+" 22")
+                sock_proxy=paramiko.ProxyCommand("ssh user@"+args.proxy+" nc "+host+" 22")
                 
             if (args.ssh_keyfile):
                 ssh.connect(host,username=args.ssh_username,key_filename=args.ssh_keyfile)
